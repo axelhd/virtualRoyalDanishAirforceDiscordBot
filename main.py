@@ -235,6 +235,14 @@ async def cleanup(ctx):
             print(f'Deleted role: {role.name}')
 
 
+@bot.command()
+async def start(ctx):
+    pass
+
+@bot.command()
+async def stop(ctx):
+    pass
+
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user.name} - {bot.user.id}')
