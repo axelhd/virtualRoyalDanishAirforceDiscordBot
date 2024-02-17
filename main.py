@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+import requests
 
 intents = discord.Intents.default()
 intents.reactions = True  # Enable reaction events
@@ -11,6 +12,9 @@ bot = commands.Bot(intents=intents, command_prefix="!")
 
 with open('token.txt') as f:
     TOKEN = f.readline()
+
+with open('ip.txt') as f:
+    ip = f.readline()
 
 # Emoji Variables
 
@@ -241,7 +245,7 @@ async def start(ctx):
 
 @bot.command()
 async def stop(ctx):
-    pass
+    requests.get(f"{ip}/shutdown")
 
 @bot.event
 async def on_ready():
