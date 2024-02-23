@@ -11,4 +11,7 @@ def index(data):
     if data == 'poweroff':
         os.system('shutdown -s')
 
+    return data
+
+
 app.run()
