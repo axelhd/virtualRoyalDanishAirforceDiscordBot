@@ -1,6 +1,9 @@
+import os
+
 import discord
 from discord.ext import commands
 import requests
+import wakeonlan
 
 intents = discord.Intents.default()
 intents.reactions = True  # Enable reaction events
@@ -8,7 +11,7 @@ intents.message_content = True
 intents.members = True
 
 # Create a bot instance
-bot = commands.Bot(intents=intents, command_prefix="!")
+bot = commands.Bot(command_prefix="$", intents=intents)
 
 with open('token.txt') as f:
     TOKEN = f.readline()
@@ -210,17 +213,18 @@ custom_emoji_id = [
 emoji_to_role_dict = {}
 
 for i in range(len(RolesV2)):
-    emoji_to_role_dict[RolesV2[i]] = custom_emoji_id[i]#.replace("<", "").replace(">", "")
+    emoji_to_role_dict[RolesV2[i]] = custom_emoji_id[i]  # .replace("<", "").replace(">", "")
 
 print(emoji_to_role_dict)
 emoji_to_role_dict = {v: k for k, v in emoji_to_role_dict.items()}
 print(emoji_to_role_dict)
 
+
 # End Emoji Variables
 
 @bot.command()
-async def test(ctx):
-    print("test")
+async def test(ctx, arg):
+    await ctx.send(arg)
 
 
 @bot.command()
@@ -241,11 +245,36 @@ async def cleanup(ctx):
 
 @bot.command()
 async def start(ctx):
-    pass
+    server_online = os.system("ping  -c 1 10.0.0.9")
+    print(server_online)
+
+    if server_online == 0:
+        await ctx.reply("Server already online")
+
+    else:
+        await ctx.reply("Starting server")
+        wakeonlan.send_magic_packet("D4:81:D7:B5:E7:13")
+
 
 @bot.command()
 async def stop(ctx):
-    requests.get(f"{ip}/shutdown")
+    server_online = os.system("ping  -c 1 10.0.0.9")
+    if server_online == 0:
+        await ctx.reply("Stopping server")
+        requests.get(f"http://{ip}:5000/poweroff")
+
+    else:
+        await ctx.reply("Server not online")
+
+
+@bot.command()
+async def status(ctx):
+    server_online = os.system("ping  -c 1 10.0.0.9")
+    if server_online == 0:
+        await ctx.reply("Server is online")
+
+    else:
+        await ctx.reply("Server is not online")
 
 @bot.event
 async def on_ready():
@@ -257,7 +286,7 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
-    if message.content == '!start':
+    if message.content == '!start reaktioner':
         await message.channel.send("Reager for at få roller")
         roles_react1 = await message.channel.send("Vælg roller (1/3)")
         for i in range(0, len(custom_emoji_id)):
@@ -275,7 +304,6 @@ async def on_message(message):
 
         roles_react3 = await message.channel.send("Vælg roller (3/3)")
         for i in range(40, len(custom_emoji_id)):
-
             await roles_react3.add_reaction(custom_emoji_id[i])
 
     if message.content == '!Initialiser':
@@ -300,6 +328,8 @@ async def on_message(message):
     if message.content == "emoji":
         for ce in custom_emoji_id:
             await message.channel.send(ce)
+
+    await bot.process_commands(message)
 
 
 @bot.event
@@ -326,5 +356,6 @@ async def on_reaction_remove(reaction, user):
         print(role)
         dRole = discord.utils.get(user.guild.roles, name=role)
         await user.remove_roles(dRole)
+
 
 bot.run(TOKEN)
