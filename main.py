@@ -19,6 +19,7 @@ with open('token.txt') as f:
 with open('ip.txt') as f:
     ip = f.readline()
 
+
 # Emoji Variables
 
 a = "🇦"
@@ -261,7 +262,7 @@ async def stop(ctx):
     server_online = os.system("ping  -c 1 10.0.0.9")
     if server_online == 0:
         await ctx.reply("Stopping server")
-        requests.get(f"http://{ip}:5000/poweroff")
+        os.system(f"curl {ip}:5000/poweroff")
 
     else:
         await ctx.reply("Server not online")
