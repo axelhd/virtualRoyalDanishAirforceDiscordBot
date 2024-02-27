@@ -17,7 +17,7 @@ with open('token.txt') as f:
     TOKEN = f.readline()
 
 with open('ip.txt') as f:
-    ip = f.readline()
+    ip = f.readline().strip()
 
 
 # Emoji Variables
