@@ -9,7 +9,7 @@ app = Flask(__name__)
 def index(data):
     print(data)
     if data == 'poweroff':
-        os.system('shutdown -s')
+        os.system('shutdown /s /t 0')
 
     return data
 
