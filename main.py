@@ -31,12 +31,13 @@ message_id1 = config['DEFAULT']['message_id1']
 message_id2 = config['DEFAULT']['message_id2']
 authorization = config['DEFAULT']['authorization']
 authorization_mode = config['DEFAULT']['authorization_mode']
-
 authorization_mode = int(authorization_mode)
+
 
 def update_config(updated_config):
     with open('config.ini', 'w') as configfile:
         updated_config.write(configfile)
+        config.read('config.ini')
 
 
 def authorize(user):
@@ -48,6 +49,17 @@ def authorize(user):
         if user == authorization:
             return True
 
+    return False
+
+
+def reaction_message(message):
+    config.read('config.ini')
+    message_id1 = config['DEFAULT']['message_id1']
+    message_id2 = config['DEFAULT']['message_id2']
+    print(message)
+    message = str(message)
+    if message == message_id1 or message == message_id2:
+        return True
     return False
 
 
@@ -343,7 +355,7 @@ async def on_message(message):
     if message.content == '!start reaktioner':
         await message.channel.send("Reager for at få roller")
         roles_react1 = await message.channel.send("Vælg roller (1/2)")
-        config['DEFAULT']['message_id1'] = roles_react1
+        config['DEFAULT']['message_id1'] = str(roles_react1.id)
         update_config(config)
         for i in range(0, len(custom_emoji_id)):
             if i == 20:
@@ -352,7 +364,7 @@ async def on_message(message):
             await roles_react1.add_reaction(custom_emoji_id[i])
 
         roles_react2 = await message.channel.send("Vælg roller (2/2)")
-        config['DEFAULT']['message_id2'] = roles_react2
+        config['DEFAULT']['message_id2'] = str(roles_react2.id)
         update_config(config)
         for i in range(20, len(custom_emoji_id)):
             if i == 40:
@@ -395,25 +407,26 @@ async def on_reaction_add(reaction, user):
     if user == bot.user:
         return
 
-    if str(reaction.emoji) in custom_emoji_id:
-        await reaction.message.channel.send(f"{user.mention}, Reacted with {reaction.emoji}!")
-        role = emoji_to_role_dict.get(str(reaction.emoji))
-        print(role)
-        dRole = discord.utils.get(user.guild.roles, name=role)
-        await user.add_roles(dRole)
+    if reaction_message(reaction.message.id):
+        if str(reaction.emoji) in custom_emoji_id:
+            await reaction.message.channel.send(f"{user.mention}, Reacted with {reaction.emoji}!")
+            role = emoji_to_role_dict.get(str(reaction.emoji))
+            print(role)
+            dRole = discord.utils.get(user.guild.roles, name=role)
+            await user.add_roles(dRole)
 
 
 @bot.event
 async def on_reaction_remove(reaction, user):
     if user == bot.user:
         return
-
-    if str(reaction.emoji) in custom_emoji_id:
-        await reaction.message.channel.send(f"{user.mention}, Removed reaction {reaction.emoji}!")
-        role = emoji_to_role_dict.get(str(reaction.emoji))
-        print(role)
-        dRole = discord.utils.get(user.guild.roles, name=role)
-        await user.remove_roles(dRole)
+    if reaction_message(reaction.message.id):
+        if str(reaction.emoji) in custom_emoji_id:
+            await reaction.message.channel.send(f"{user.mention}, Removed reaction {reaction.emoji}!")
+            role = emoji_to_role_dict.get(str(reaction.emoji))
+            print(role)
+            dRole = discord.utils.get(user.guild.roles, name=role)
+            await user.remove_roles(dRole)
 
 
 bot.run(TOKEN)
