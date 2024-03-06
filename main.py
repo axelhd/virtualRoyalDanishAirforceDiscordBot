@@ -1,9 +1,11 @@
 import os
-
+import configparser
+import sys
 import discord
 from discord.ext import commands
-import requests
 import wakeonlan
+
+config = configparser.ConfigParser()
 
 intents = discord.Intents.default()
 intents.reactions = True  # Enable reaction events
@@ -13,11 +15,40 @@ intents.members = True
 # Create a bot instance
 bot = commands.Bot(command_prefix="$", intents=intents)
 
-with open('token.txt') as f:
-    TOKEN = f.readline()
+config.read('config.ini')
 
-with open('ip.txt') as f:
-    ip = f.readline().strip()
+if config.sections() == "[]":
+    print(config.sections())
+    print("Config file empty, quitting")
+    sys.exit()
+
+for key in config['DEFAULT']:
+    print(f"{key}: {config['DEFAULT'][key]}")
+
+ip = config['DEFAULT']['ip']
+TOKEN = config['DEFAULT']['token']
+message_id1 = config['DEFAULT']['message_id1']
+message_id2 = config['DEFAULT']['message_id2']
+authorization = config['DEFAULT']['authorization']
+authorization_mode = config['DEFAULT']['authorization_mode']
+
+authorization_mode = int(authorization_mode)
+
+def update_config(updated_config):
+    with open('config.ini', 'w') as configfile:
+        updated_config.write(configfile)
+
+
+def authorize(user):
+    print(authorization_mode)
+    if authorization_mode == 0:
+        if user != authorization:
+            return True
+    if authorization_mode == 1:
+        if user == authorization:
+            return True
+
+    return False
 
 
 # Emoji Variables
@@ -224,6 +255,18 @@ print(emoji_to_role_dict)
 # End Emoji Variables
 
 @bot.command()
+async def reset_config(ctx):
+    config['DEFAULT'] = {'ip': '<IP>',
+                         'message_id1': '',
+                         'message_id2': '',
+                         'token': '',
+                         'authorization': '',
+                         'authorization_mode': 0}
+    with open('config.ini', 'w') as configfile:
+        config.write(configfile)
+
+
+@bot.command()
 async def test(ctx, arg):
     await ctx.send(arg)
 
@@ -246,36 +289,46 @@ async def cleanup(ctx):
 
 @bot.command()
 async def start(ctx):
-    server_online = os.system("ping  -c 1 10.0.0.9")
-    print(server_online)
+    if authorize(ctx.message.author):
+        server_online = os.system(f"ping  -c 1 {ip}")
+        print(server_online)
 
-    if server_online == 0:
-        await ctx.reply("Server already online")
+        if server_online == 0:
+            await ctx.reply("Server already online")
 
+        else:
+            await ctx.reply("Starting server")
+            wakeonlan.send_magic_packet("D4:81:D7:B5:E7:13")
     else:
-        await ctx.reply("Starting server")
-        wakeonlan.send_magic_packet("D4:81:D7:B5:E7:13")
+        await ctx.reply('NUH UH')
 
 
 @bot.command()
 async def stop(ctx):
-    server_online = os.system("ping  -c 1 10.0.0.9")
-    if server_online == 0:
-        await ctx.reply("Stopping server")
-        os.system(f"curl {ip}:5000/poweroff")
+    if authorize(ctx.message.author):
+        server_online = os.system(f"ping  -c 1 {ip}")
+        if server_online == 0:
+            await ctx.reply("Stopping server")
+            os.system(f"curl {ip}:5000/poweroff")
 
+        else:
+            await ctx.reply("Server not online")
     else:
-        await ctx.reply("Server not online")
+        await ctx.reply('NUH UH')
 
 
 @bot.command()
 async def status(ctx):
-    server_online = os.system("ping  -c 1 10.0.0.9")
-    if server_online == 0:
-        await ctx.reply("Server is online")
+    if authorize(ctx.message.author):
+        server_online = os.system(f"ping  -c 1 {ip}")
+        if server_online == 0:
+            await ctx.reply("Server is online")
 
+        else:
+            await ctx.reply("Server is not online")
     else:
-        await ctx.reply("Server is not online")
+        await ctx.reply('NUH UH')
+
 
 @bot.event
 async def on_ready():
@@ -289,23 +342,27 @@ async def on_message(message):
 
     if message.content == '!start reaktioner':
         await message.channel.send("Reager for at få roller")
-        roles_react1 = await message.channel.send("Vælg roller (1/3)")
+        roles_react1 = await message.channel.send("Vælg roller (1/2)")
+        config['DEFAULT']['message_id1'] = roles_react1
+        update_config(config)
         for i in range(0, len(custom_emoji_id)):
             if i == 20:
                 break
 
             await roles_react1.add_reaction(custom_emoji_id[i])
 
-        roles_react2 = await message.channel.send("Vælg roller (2/3)")
+        roles_react2 = await message.channel.send("Vælg roller (2/2)")
+        config['DEFAULT']['message_id2'] = roles_react2
+        update_config(config)
         for i in range(20, len(custom_emoji_id)):
             if i == 40:
                 break
 
             await roles_react2.add_reaction(custom_emoji_id[i])
 
-        roles_react3 = await message.channel.send("Vælg roller (3/3)")
-        for i in range(40, len(custom_emoji_id)):
-            await roles_react3.add_reaction(custom_emoji_id[i])
+        # roles_react3 = await message.channel.send("Vælg roller (3/3)")
+        # for i in range(40, len(custom_emoji_id)):
+        #     await roles_react3.add_reaction(custom_emoji_id[i])
 
     if message.content == '!Initialiser':
         for aircraft in RolesV2:
