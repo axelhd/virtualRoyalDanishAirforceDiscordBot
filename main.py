@@ -41,12 +41,11 @@ def update_config(updated_config):
 
 
 def authorize(user):
-    print(authorization_mode)
     if authorization_mode == 0:
-        if user != authorization:
+        if str(user) != authorization:
             return True
     if authorization_mode == 1:
-        if user == authorization:
+        if str(user) == authorization:
             return True
 
     return False
