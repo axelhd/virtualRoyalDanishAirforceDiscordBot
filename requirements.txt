@@ -1,3 +1,4 @@
 discord
 flask
 wakeonlan
+requests

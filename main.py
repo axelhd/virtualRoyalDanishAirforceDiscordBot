@@ -4,6 +4,8 @@ import sys
 import discord
 from discord.ext import commands
 import wakeonlan
+import requests
+import socket
 
 config = configparser.ConfigParser()
 
@@ -320,7 +322,7 @@ async def stop(ctx):
         server_online = os.system(f"ping  -c 1 {ip}")
         if server_online == 0:
             await ctx.reply("Stopping server")
-            os.system(f"curl {ip}:5000/poweroff")
+            requests.get(f"{ip}:5000/poweroff")
 
         else:
             await ctx.reply("Server not online")
@@ -330,13 +332,27 @@ async def stop(ctx):
 
 @bot.command()
 async def status(ctx):
+    server_online = False
+    shutdown_available = False
+    dcs_server_online = False
+
     if authorize(ctx.message.author):
         server_online = os.system(f"ping  -c 1 {ip}")
         if server_online == 0:
-            await ctx.reply("Server is online")
+            server_online = True
 
         else:
-            await ctx.reply("Server is not online")
+            await ctx.reply(f"Server Online: {server_online}\n Shutdown Available: {shutdown_available}\n DCS Running: {dcs_server_online}")
+            return
+
+        if str(requests.get(f"{ip}:5000/test")).strip() == "test":
+            shutdown_available = True
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if s.connect_ex((ip, 10308)) == 0:
+                dcs_server_online = True
+
+        await ctx.reply(f"Server Online: {server_online}\n Shutdown Available: {shutdown_available}\n DCS Running: {dcs_server_online}")
     else:
         await ctx.reply('NUH UH')
 
