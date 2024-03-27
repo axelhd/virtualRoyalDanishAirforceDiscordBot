@@ -322,7 +322,7 @@ async def stop(ctx):
         server_online = os.system(f"ping  -c 1 {ip}")
         if server_online == 0:
             await ctx.reply("Stopping server")
-            requests.get(f"{ip}:5000/poweroff")
+            requests.get(f"http://{ip}:5000/poweroff")
 
         else:
             await ctx.reply("Server not online")
@@ -332,27 +332,30 @@ async def stop(ctx):
 
 @bot.command()
 async def status(ctx):
-    server_online = False
+    server_online_bool = False
     shutdown_available = False
     dcs_server_online = False
 
     if authorize(ctx.message.author):
-        server_online = os.system(f"ping  -c 1 {ip}")
+        server_online = os.system(f"ping  -c 1 -W 1 {ip}")
         if server_online == 0:
-            server_online = True
+            server_online_bool = True
 
         else:
-            await ctx.reply(f"Server Online: {server_online}\n Shutdown Available: {shutdown_available}\n DCS Running: {dcs_server_online}")
+            await ctx.reply(f"Server Online: {server_online_bool}\nShutdown Available: {shutdown_available}\nDCS Running: {dcs_server_online}")
             return
+        try:
+            if requests.get(f"http://{ip}:5000/test").text.strip() == "test":
+                shutdown_available = True
 
-        if str(requests.get(f"{ip}:5000/test")).strip() == "test":
-            shutdown_available = True
+        except Exception as e:
+            print(e)
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             if s.connect_ex((ip, 10308)) == 0:
                 dcs_server_online = True
 
-        await ctx.reply(f"Server Online: {server_online}\n Shutdown Available: {shutdown_available}\n DCS Running: {dcs_server_online}")
+        await ctx.reply(f"Server Online: {server_online_bool}\nShutdown Available: {shutdown_available}\nDCS Running: {dcs_server_online}")
     else:
         await ctx.reply('NUH UH')
 
