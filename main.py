@@ -34,6 +34,8 @@ message_id2 = config['DEFAULT']['message_id2']
 authorization = config['DEFAULT']['authorization']
 authorization_mode = config['DEFAULT']['authorization_mode']
 authorization_mode = int(authorization_mode)
+logging = bool(config['DEFAULT']['logging'])
+LOG_FILE = config['DEFAULT']['logfile']
 
 
 def update_config(updated_config):
@@ -414,6 +416,15 @@ async def on_message(message):
     if message.content == "emoji":
         for ce in custom_emoji_id:
             await message.channel.send(ce)
+
+    if logging:
+        log_message = f'UTC: {message.created_at}: {message.author} in {message.channel}: {message.content}\n'
+        print(log_message)
+        # Log to a file
+        with open(LOG_FILE, 'a') as file:
+            file.write(log_message)
+
+    await bot.process_commands(message)
 
     await bot.process_commands(message)
 
