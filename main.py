@@ -344,16 +344,14 @@ async def status(ctx):
         else:
             await ctx.reply(f"Server Online: {server_online_bool}\nShutdown Available: {shutdown_available}\nDCS Running: {dcs_server_online}")
             return
-        try:
-            if requests.get(f"http://{ip}:5000/test").text.strip() == "test":
+
+        if server_online_bool:
+            if os.system(f"curl http://{ip}:5000/test") == 0:
                 shutdown_available = True
 
-        except Exception as e:
-            print(e)
-
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            if s.connect_ex((ip, 10308)) == 0:
-                dcs_server_online = True
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                if s.connect_ex((ip, 10308)) == 0:
+                    dcs_server_online = True
 
         await ctx.reply(f"Server Online: {server_online_bool}\nShutdown Available: {shutdown_available}\nDCS Running: {dcs_server_online}")
     else:
